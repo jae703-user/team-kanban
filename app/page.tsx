@@ -40,6 +40,12 @@ export default function KanbanBoard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"kanban" | "gantt">("kanban"); // 상단 화면 뷰 모드 스위치 상태
 
+  // [상사 만족도 200% 피드백 #1] 메인 대문 상단 '👑 팀장 긴급 공지 전광판 배너' 상태
+  const [announcementText, setAnnouncementText] = useState("이번 주 금요일 오후 5시까지 전원 1차 산출물 및 기획안 피그마 링크 업데이트 엄수 부탁드립니다!");
+  const [isAnnouncementVisible, setIsAnnouncementVisible] = useState(true);
+  const [isEditingAnnouncement, setIsEditingAnnouncement] = useState(false);
+  const [tempAnnouncement, setTempAnnouncement] = useState("");
+
   // [사용 편의성 피드백] HTML5 드래그 앤 드롭 상태 변수
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverColId, setDragOverColId] = useState<string | null>(null);
@@ -445,6 +451,63 @@ export default function KanbanBoard() {
           </div>
         </div>
       </header>
+
+      {/* --- [상사 만족도 200% 피드백 #1: 👑 팀장 긴급 지시사항 라이브 전광판 배너] --- */}
+      {isAnnouncementVisible && (
+        <div className="max-w-7xl mx-auto mb-8 animate-in fade-in slide-in-from-top duration-500">
+          <div className="bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-rose-500/20 p-5 md:p-6 rounded-3xl border border-amber-500/40 shadow-2xl backdrop-blur-2xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+            
+            <div className="flex items-center gap-3.5 flex-1 w-full relative z-10">
+              <div className="p-3 bg-amber-500 text-slate-950 rounded-2xl font-black shrink-0 shadow-lg shadow-amber-500/30 flex items-center gap-1.5 text-xs tracking-wider animate-pulse">
+                📢 팀장 긴급 공지
+              </div>
+              
+              {isEditingAnnouncement ? (
+                <div className="flex items-center gap-2 flex-1 w-full">
+                  <input 
+                    type="text" 
+                    value={tempAnnouncement} 
+                    onChange={e => setTempAnnouncement(e.target.value)} 
+                    className="flex-1 bg-slate-950/80 border border-amber-500/50 rounded-xl px-4 py-2 text-sm text-amber-200 font-bold focus:outline-none"
+                    placeholder="팀원들에게 공지할 긴급 메시지를 입력하세요..."
+                    autoFocus
+                  />
+                  <button 
+                    onClick={() => { setAnnouncementText(tempAnnouncement || announcementText); setIsEditingAnnouncement(false); }}
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition shadow-md shrink-0 cursor-pointer"
+                  >
+                    저장
+                  </button>
+                </div>
+              ) : (
+                <p className="text-amber-200 md:text-base font-extrabold tracking-tight flex-1 line-clamp-2 selection:bg-amber-500 selection:text-slate-950">
+                  {announcementText}
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 relative z-10 self-end md:self-center shrink-0">
+              {(!isEditingAnnouncement) && (
+                <button 
+                  onClick={() => { setTempAnnouncement(announcementText); setIsEditingAnnouncement(true); }}
+                  className="px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-black rounded-xl text-xs transition border border-amber-500/30 flex items-center gap-1 cursor-pointer"
+                  title="공지 내용 수정"
+                >
+                  <Edit3 className="w-3.5 h-3.5" /> 공지 수정
+                </button>
+              )}
+              <button 
+                onClick={() => setIsAnnouncementVisible(false)}
+                className="p-2 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl transition border border-slate-800 cursor-pointer"
+                title="공지 배너 숨기기"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* --- [상단 대형 뷰 모드 전환 스위치 탭] --- */}
       <div className="max-w-7xl mx-auto mb-8 flex justify-center">
