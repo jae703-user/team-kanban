@@ -38,14 +38,18 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
-    const { id, status } = body;
+    const { id, status, comments } = body;
+    const updateData: any = {};
+    if (status !== undefined) updateData.status = status; // 상태 변경 요청이 들어오면 주입
+    if (comments !== undefined) updateData.comments = comments; // 댓글 변경 요청이 들어오면 주입
+
     const updatedTask = await prisma.task.update({
       where: { id },
-      data: { status }
+      data: updateData
     });
     return NextResponse.json(updatedTask);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to update status' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update task' }, { status: 500 });
   }
 }
 

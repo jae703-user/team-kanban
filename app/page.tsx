@@ -18,6 +18,7 @@ interface Task {
   roleTag: string;
   status: "TODO" | "IN_PROGRESS" | "DONE";
   deadline: string;
+  comments?: string; // 카드 내 실시간 피드 댓글 대화 목록 (JSON 문자열)
 }
 
 const COLUMNS = [
@@ -61,6 +62,7 @@ export default function KanbanBoard() {
 
   // [피드백 #4] 최종 성과 증빙 종합 보고서 모달 상태
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [newCommentText, setNewCommentText] = useState(""); // 피드 댓글 입력창 텍스트 상태
 
   const fetchTasks = async () => {
     setIsLoading(true);
@@ -237,6 +239,40 @@ export default function KanbanBoard() {
       }
     } catch (err) {
       alert("삭제 실패");
+    }
+  };
+
+  // 피드 댓글 및 파일 링크 등록 핸들러
+  const handleAddComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTask || !newCommentText.trim()) return;
+    if (!user) {
+      alert("🔐 로그인한 팀원만 실시간 피드 댓글을 작성할 수 있습니다!");
+      router.push("/login");
+      return;
+    }
+    const currentList = selectedTask.comments ? JSON.parse(selectedTask.comments) : [];
+    const newObj = {
+      id: Date.now().toString(),
+      author: user.name,
+      text: newCommentText.trim(),
+      time: new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })
+    };
+    const updatedStr = JSON.stringify([...currentList, newObj]);
+
+    // 화면 낙관적 업데이트 (로딩 없이 즉시 렌더링)
+    setSelectedTask({ ...selectedTask, comments: updatedStr });
+    setTasks(prev => prev.map(t => t.id === selectedTask.id ? { ...t, comments: updatedStr } : t));
+    setNewCommentText("");
+
+    try {
+      await fetch("/api/tasks", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: selectedTask.id, comments: updatedStr })
+      });
+    } catch (err) {
+      alert("댓글 서버 전송 실패");
     }
   };
 
@@ -734,6 +770,40 @@ export default function KanbanBoard() {
                 <div className="flex gap-3 pt-2">
                   <button onClick={handleDelete} className="px-6 py-3.5 bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 hover:border-transparent font-bold rounded-2xl transition text-sm flex items-center justify-center gap-1.5"><Trash2 className="w-4 h-4" /> 삭제</button>
                   <button onClick={() => setIsEditMode(true)} className="flex-1 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-2xl transition text-sm flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-600/30"><Edit3 className="w-4 h-4" /> 내용 수정하기</button>
+                </div>
+
+                {/* --- [실전 피드 댓글 대화창 및 파일 링크 산출물 박제 영역] --- */}
+                <div className="border-t border-slate-800 pt-5 mt-6">
+                  <h3 className="text-sm font-black text-slate-200 mb-3 flex items-center gap-1.5">
+                    💬 실시간 업무 피드 & 링크 박제 ({selectedTask.comments ? JSON.parse(selectedTask.comments).length : 0})
+                  </h3>
+                  <div className="bg-slate-950 rounded-2xl p-4 border border-slate-800/80 max-h-44 overflow-y-auto space-y-2.5 mb-3.5 shadow-inner">
+                    {(!selectedTask.comments || JSON.parse(selectedTask.comments).length === 0) ? (
+                      <p className="text-xs text-slate-500 text-center py-5 font-medium">아직 대화 내역이 없습니다. 구글 드라이브 링크나 지시사항을 남겨보세요!</p>
+                    ) : (
+                      JSON.parse(selectedTask.comments).map((cmt: any) => (
+                        <div key={cmt.id} className="text-xs space-y-1 bg-slate-900/80 p-3 rounded-xl border border-slate-800/60 animate-in fade-in duration-200">
+                          <div className="flex justify-between items-center text-slate-400 font-bold">
+                            <span className="text-indigo-300 font-black">@{cmt.author}</span>
+                            <span className="text-[10px] text-slate-500">{cmt.time}</span>
+                          </div>
+                          <p className="text-slate-100 font-medium whitespace-pre-wrap leading-relaxed">{cmt.text}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <form onSubmit={handleAddComment} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newCommentText}
+                      onChange={e => setNewCommentText(e.target.value)}
+                      placeholder="💬 @팀원 멘션하거나 구글드라이브 URL 입력..."
+                      className="flex-1 px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition shadow-inner"
+                    />
+                    <button type="submit" className="px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black rounded-xl text-xs transition shadow-lg shadow-indigo-600/30 cursor-pointer">
+                      전송
+                    </button>
+                  </form>
                 </div>
               </div>
             ) : (

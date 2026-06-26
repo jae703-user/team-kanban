@@ -14,6 +14,7 @@ model Task {
   roleTag   String   @default("👑팀장")
   status    String   @default("TODO") // TODO, IN_PROGRESS, DONE
   deadline  String
+  comments  String?  @default("[]") // 카드 내 실시간 피드 댓글 대화 목록 (JSON 텍스트 형식)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
