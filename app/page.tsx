@@ -276,9 +276,9 @@ export default function KanbanBoard() {
     }
   };
 
-  // 실시간 하이브리드 필터링 연산
+  // 실시간 하이브리드 필터링 연산 (다중 태그 포함 여부 검사)
   const filteredTasks = tasks.filter(t => {
-    const matchRole = filterRole === "ALL" || t.roleTag === filterRole;
+    const matchRole = filterRole === "ALL" || t.roleTag.includes(filterRole);
     const q = searchQuery.toLowerCase();
     const matchSearch = q === "" || t.title.toLowerCase().includes(q) || t.assignee.toLowerCase().includes(q) || (t.desc && t.desc.toLowerCase().includes(q));
     return matchRole && matchSearch;
@@ -521,9 +521,13 @@ export default function KanbanBoard() {
 
                       <div>
                         <div className="flex justify-between items-start gap-2 mb-3">
-                          <span className="px-3 py-1 bg-slate-950/80 text-slate-300 rounded-xl text-xs font-extrabold border border-slate-800 shadow-sm">
-                            {t.roleTag}
-                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {t.roleTag.split(",").map(tag => (
+                              <span key={tag} className="px-2.5 py-1 bg-slate-950/80 text-slate-300 rounded-xl text-xs font-extrabold border border-slate-800 shadow-sm">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
                           
                           <span className={`px-2.5 py-1 rounded-xl text-xs font-black flex items-center gap-1 shadow-sm ${
                             t.status === "DONE" || t.deadline.includes("완료") 
@@ -726,16 +730,34 @@ export default function KanbanBoard() {
                   <label className="block text-xs font-bold text-slate-400 mb-1">담당자명 *</label>
                   <input type="text" value={formAssignee} onChange={e => setFormAssignee(e.target.value)} placeholder="홍길동" className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none" required />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">역할 태그</label>
-                  <select value={formRole} onChange={e => setFormRole(e.target.value)} className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none">
-                    <option value="👑팀장">👑 팀장</option>
-                    <option value="💻기획">💻 기획</option>
-                    <option value="🎨디자인">🎨 디자인</option>
-                    <option value="⚙️백엔드">⚙️ 백엔드</option>
-                    <option value="🚀프론트">🚀 프론트</option>
-                  </select>
-                </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 mb-1">역할 태그 (다중 선택 가능) *</label>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {ROLES.filter(r => r !== "ALL").map(role => {
+                        const isChecked = formRole.split(",").includes(role);
+                        return (
+                          <button
+                            key={role}
+                            type="button"
+                            onClick={() => {
+                              const arr = formRole.split(",").filter(Boolean);
+                              if (arr.includes(role)) {
+                                const next = arr.filter(r => r !== role);
+                                setFormRole(next.length === 0 ? role : next.join(","));
+                              } else {
+                                setFormRole([...arr, role].join(","));
+                              }
+                            }}
+                            className={`px-2.5 py-1.5 rounded-xl text-xs font-extrabold border transition shadow-sm ${
+                              isChecked ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-indigo-400 scale-105" : "bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-900"
+                            }`}
+                          >
+                            {role}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-400 mb-1">마감일</label>
@@ -757,8 +779,10 @@ export default function KanbanBoard() {
             <button onClick={() => setSelectedTask(null)} className="absolute top-6 right-6 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             {!isEditMode ? (
               <div className="space-y-6">
-                <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 rounded-lg text-xs font-extrabold">{selectedTask.roleTag}</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {selectedTask.roleTag.split(",").map(tag => (
+                    <span key={tag} className="px-3 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 rounded-lg text-xs font-extrabold">{tag}</span>
+                  ))}
                   <span className="px-3 py-1 bg-slate-800 text-slate-300 rounded-lg text-xs font-bold">⏳ {selectedTask.deadline}</span>
                 </div>
                 <h2 className="text-2xl font-black text-white leading-snug">{selectedTask.title}</h2>
@@ -823,14 +847,32 @@ export default function KanbanBoard() {
                     <input type="text" value={editAssignee} onChange={e => setEditAssignee(e.target.value)} className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none" required />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 mb-1">역할 태그</label>
-                    <select value={editRole} onChange={e => setEditRole(e.target.value)} className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none">
-                      <option value="👑팀장">👑 팀장</option>
-                      <option value="💻기획">💻 기획</option>
-                      <option value="🎨디자인">🎨 디자인</option>
-                      <option value="⚙️백엔드">⚙️ 백엔드</option>
-                      <option value="🚀프론트">🚀 프론트</option>
-                    </select>
+                    <label className="block text-xs font-bold text-slate-400 mb-1">역할 태그 (다중 선택 가능) *</label>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {ROLES.filter(r => r !== "ALL").map(role => {
+                        const isChecked = editRole.split(",").includes(role);
+                        return (
+                          <button
+                            key={role}
+                            type="button"
+                            onClick={() => {
+                              const arr = editRole.split(",").filter(Boolean);
+                              if (arr.includes(role)) {
+                                const next = arr.filter(r => r !== role);
+                                setEditRole(next.length === 0 ? role : next.join(","));
+                              } else {
+                                setEditRole([...arr, role].join(","));
+                              }
+                            }}
+                            className={`px-2.5 py-1.5 rounded-xl text-xs font-extrabold border transition shadow-sm ${
+                              isChecked ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-indigo-400 scale-105" : "bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-900"
+                            }`}
+                          >
+                            {role}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
                 <div>
