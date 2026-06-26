@@ -393,6 +393,41 @@ export default function KanbanBoard() {
           </div>
         </div>
 
+        {/* --- [상사 만족도 300% 피드백 #2: 왕관 쓴 금메달 종합 평가 도장 카드] --- */}
+        <div className="bg-gradient-to-r from-amber-500/20 via-yellow-500/10 to-amber-600/20 p-6 md:p-8 rounded-3xl border border-amber-500/40 shadow-2xl mb-6 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 group hover:border-amber-400/60 transition-all duration-500">
+          <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-amber-500/15 rounded-full blur-3xl pointer-events-none group-hover:bg-amber-500/25 transition-all duration-700" />
+          
+          <div className="flex items-center gap-5 relative z-10 w-full md:w-auto">
+            <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-amber-500 to-yellow-300 p-0.5 shadow-xl shadow-amber-500/30 shrink-0 transform group-hover:rotate-6 transition duration-300">
+              <div className="w-full h-full bg-slate-950 rounded-[22px] flex items-center justify-center text-3xl">
+                🏆
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 rounded-full text-[11px] font-black tracking-wider uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
+                  👑 경영진 전용 종합 결론 피드백
+                </span>
+                <span className="text-xs text-slate-400 font-bold">집계 기준: 2026년 6월 4주차</span>
+              </div>
+              <h2 className="text-2xl md:text-3xl font-black text-white mt-1.5 tracking-tight flex items-center gap-2">
+                금주의 팀 협업 종합 평가 : <span className="text-amber-400 font-black">94점</span>
+              </h2>
+            </div>
+          </div>
+
+          <div className="relative z-10 flex items-center gap-4 bg-slate-950/80 px-8 py-5 rounded-2xl border border-amber-500/40 shadow-inner w-full md:w-auto justify-center">
+            <div className="text-right">
+              <div className="text-xs text-slate-400 font-bold">비전공자 상사 판별 등급</div>
+              <div className="text-sm font-black text-emerald-400 mt-0.5">"계획 대비 진척이 대단히 훌륭함"</div>
+            </div>
+            <div className="w-px h-10 bg-slate-800" />
+            <div className="text-4xl font-black bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-600 bg-clip-text text-transparent transform scale-110 drop-shadow-md">
+              S등급
+            </div>
+          </div>
+        </div>
+
         {/* Overall Progress Bar */}
         <div className="bg-slate-900/70 backdrop-blur-xl p-7 rounded-3xl border border-slate-800/80 shadow-xl mb-6 relative overflow-hidden">
           <div className="flex justify-between items-center mb-3.5">
