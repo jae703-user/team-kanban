@@ -723,28 +723,52 @@ export default function KanbanBoard() {
                           }`}>
                             {t.status}
                           </span>
+                        </td>
+                        <td className="p-4 text-amber-400 font-extrabold">{t.deadline}</td>
+
+                        {/* 6월~7월 주차별 갠트차트 막대 바 가로축 출력 */}
+                        <td className="p-3 text-center border-l border-slate-800/60 relative">
+                          {(startGrid === 1) && (
+                            <div className={`h-6 rounded-lg flex items-center justify-center text-[10px] font-black shadow-md ${
+                              isDone ? "bg-emerald-500 text-slate-950 w-[190%]" :
+                              isInProg ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white w-[190%]" :
+                              "bg-slate-800 text-slate-400 w-[90%]"
+                            } relative z-10`}>
+                              {isDone ? "완료 (100%)" : isInProg ? "진행 중 (50%)" : "할 일 (0%)"}
+                            </div>
                           )}
-                          {t.status !== "DONE" && (
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); moveStatus(t.id, t.status === "TODO" ? "IN_PROGRESS" : "DONE"); }}
-                              className={`px-3 py-2 text-white font-extrabold rounded-xl transition text-xs flex items-center gap-1 shadow-md hover:scale-105 active:scale-95 ${
-                                urgent ? "bg-rose-600 hover:bg-rose-500 shadow-rose-600/30" : "bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/30"
-                              }`}
-                              title="다음 단계로 이동"
-                            >
-                              이동 <ArrowRight className="w-3.5 h-3.5 font-bold" />
-                            </button>
+                        </td>
+                        <td className="p-3 text-center border-l border-slate-800/60 relative">
+                          {(startGrid === 2) && (
+                            <div className={`h-6 rounded-lg flex items-center justify-center text-[10px] font-black shadow-md ${
+                              isDone ? "bg-emerald-500 text-slate-950 w-[190%]" :
+                              isInProg ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white w-[190%]" :
+                              "bg-slate-800 text-slate-400 w-[90%]"
+                            } relative z-10`}>
+                              {isDone ? "완료 (100%)" : isInProg ? "진행 중 (50%)" : "할 일 (0%)"}
+                            </div>
                           )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                        </td>
+                        <td className="p-3 text-center border-l border-slate-800/60 relative">
+                          {(startGrid === 3) && (
+                            <div className={`h-6 rounded-lg flex items-center justify-center text-[10px] font-black shadow-md ${
+                              isInProg ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white w-[90%]" :
+                              "bg-slate-800 text-slate-400 w-[90%]"
+                            } relative z-10`}>
+                              {isInProg ? "진행 중 (50%)" : "할 일 (0%)"}
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-3 text-center border-l border-slate-800/60" />
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-          );
-        })}
-      </main>
+          </div>
+        </main>
+      )}
 
       {/* --- [피드백 #4] 교수님 제출용 프로젝트 성과 종합 보고서 모달창 --- */}
       {isReportModalOpen && (
