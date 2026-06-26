@@ -38,6 +38,7 @@ export default function KanbanBoard() {
   // [피드백 #2] 검색 및 역할 필터 상태
   const [filterRole, setFilterRole] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"kanban" | "gantt">("kanban"); // 상단 화면 뷰 모드 스위치 상태
 
   // [사용 편의성 피드백] HTML5 드래그 앤 드롭 상태 변수
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
@@ -445,132 +446,283 @@ export default function KanbanBoard() {
         </div>
       </header>
 
-      {/* Kanban Board Grid */}
-      <main className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-        {COLUMNS.map(col => {
-          const colTasks = filteredTasks
-            .filter(t => t.status === col.id)
-            .sort((a, b) => {
-              const uA = isUrgent(a.deadline, a.status) ? 1 : 0;
-              const uB = isUrgent(b.deadline, b.status) ? 1 : 0;
-              return uB - uA;
-            });
+      {/* --- [상단 대형 뷰 모드 전환 스위치 탭] --- */}
+      <div className="max-w-7xl mx-auto mb-8 flex justify-center">
+        <div className="bg-slate-900/80 p-2 rounded-3xl border border-slate-800 flex gap-2 shadow-2xl backdrop-blur-xl">
+          <button
+            onClick={() => setViewMode("kanban")}
+            className={`px-8 py-4 rounded-2xl font-black text-sm flex items-center gap-2 transition-all duration-300 cursor-pointer ${
+              viewMode === "kanban"
+                ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/40 scale-105 border border-indigo-400/30"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            📋 애자일 칸반 보드 뷰
+          </button>
+          <button
+            onClick={() => setViewMode("gantt")}
+            className={`px-8 py-4 rounded-2xl font-black text-sm flex items-center gap-2 transition-all duration-300 cursor-pointer ${
+              viewMode === "gantt"
+                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/40 scale-105 border border-emerald-400/30"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            📊 WBS & 갠트차트 종합 타임라인 뷰
+          </button>
+        </div>
+      </div>
 
-          const isBeingDraggedOver = dragOverColId === col.id;
+      {viewMode === "kanban" ? (
+        /* Kanban Board Grid */
+        <main className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+          {COLUMNS.map(col => {
+            const colTasks = filteredTasks
+              .filter(t => t.status === col.id)
+              .sort((a, b) => {
+                const uA = isUrgent(a.deadline, a.status) ? 1 : 0;
+                const uB = isUrgent(b.deadline, b.status) ? 1 : 0;
+                return uB - uA;
+              });
 
-          return (
-            <div 
-              key={col.id}
-              onDragOver={(e) => handleDragOver(e, col.id)}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, col.id)}
-              className={`rounded-3xl p-5 border backdrop-blur-xl min-h-[640px] flex flex-col shadow-2xl transition-all duration-300 relative overflow-hidden ${
-                isBeingDraggedOver
-                  ? "border-indigo-400 border-dashed bg-indigo-500/15 scale-[1.02] shadow-indigo-500/30"
-                  : col.color
-              }`}
-            >
-              {isBeingDraggedOver && (
-                <div className="absolute inset-0 bg-indigo-950/60 backdrop-blur-sm flex items-center justify-center z-20 pointer-events-none animate-pulse">
-                  <span className="text-xl font-black text-indigo-300 border-2 border-dashed border-indigo-400 px-6 py-4 rounded-3xl bg-slate-950/80 flex items-center gap-2 shadow-2xl">
-                    📥 여기에 포스트잇을 놓으세요!
+            const isBeingDraggedOver = dragOverColId === col.id;
+
+            return (
+              <div 
+                key={col.id}
+                onDragOver={(e) => handleDragOver(e, col.id)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, col.id)}
+                className={`rounded-3xl p-5 border backdrop-blur-xl min-h-[640px] flex flex-col shadow-2xl transition-all duration-300 relative overflow-hidden ${
+                  isBeingDraggedOver
+                    ? "border-indigo-400 border-dashed bg-indigo-500/15 scale-[1.02] shadow-indigo-500/30"
+                    : col.color
+                }`}
+              >
+                <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-800/80">
+                  <h2 className="text-base font-black flex items-center gap-2 tracking-tight">
+                    <span className="text-lg">{col.icon}</span> {col.title}
+                  </h2>
+                  <span className="px-3 py-1 rounded-full text-xs font-black bg-slate-900 border border-slate-800 shadow-inner">
+                    {colTasks.length}
                   </span>
                 </div>
-              )}
 
-              <div className="absolute -bottom-10 -right-10 opacity-5 pointer-events-none scale-[4]">
-                {col.icon}
-              </div>
+                <div className="flex-1 space-y-4 overflow-y-auto pr-1">
+                  {colTasks.length === 0 ? (
+                    <div className="h-44 border-2 border-dashed border-slate-800/80 rounded-3xl flex items-center justify-center text-slate-500 text-xs font-bold my-auto">
+                      {searchQuery || filterRole !== "ALL" ? "검색 조건에 일치하는 카드가 없습니다." : "이곳에 카드를 드래그해 놓으세요."}
+                    </div>
+                  ) : colTasks.map(t => {
+                    const urgent = isUrgent(t.deadline, t.status);
+                    const isBeingDragged = draggedTaskId === t.id;
 
-              <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-800/80 px-2 relative z-10">
-                <div className="flex items-center gap-2.5 font-black text-lg text-slate-200">
-                  {col.icon} {col.title}
+                    return (
+                      <div 
+                        key={t.id}
+                        draggable={true}
+                        onDragStart={(e) => handleDragStart(e, t.id)}
+                        onClick={() => openDetailModal(t)}
+                        className={`relative p-6 rounded-3xl border cursor-grab active:cursor-grabbing transition-all duration-300 ease-out flex flex-col justify-between group select-none ${
+                          isBeingDragged ? "opacity-30 scale-95 border-dashed border-indigo-400" :
+                          urgent
+                            ? "bg-gradient-to-br from-rose-950/40 via-slate-900/90 to-slate-900/90 border-rose-500/70 shadow-xl shadow-rose-500/10 animate-pulse hover:animate-none hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-rose-500/30 hover:border-rose-400"
+                            : "bg-slate-900/70 backdrop-blur-md border-slate-800/80 hover:bg-slate-900 hover:border-indigo-500/50 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-indigo-500/20"
+                        }`}
+                      >
+                        <div className={`absolute top-0 left-6 right-6 h-[2px] rounded-full opacity-60 group-hover:opacity-100 transition-opacity ${
+                          urgent ? "bg-rose-500 shadow-lg shadow-rose-500" : "bg-indigo-500"
+                        }`} />
+
+                        <div>
+                          <div className="flex justify-between items-start gap-2 mb-3">
+                            <div className="flex flex-wrap gap-1">
+                              {t.roleTag.split(",").map(tag => (
+                                <span key={tag} className="px-2.5 py-1 bg-slate-950/80 text-slate-300 rounded-xl text-xs font-extrabold border border-slate-800 shadow-sm">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                            
+                            <span className={`px-2.5 py-1 rounded-xl text-xs font-black flex items-center gap-1 shadow-sm ${
+                              t.status === "DONE" || t.deadline.includes("완료") 
+                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" 
+                                : urgent
+                                  ? "bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-bounce"
+                                  : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                            }`}>
+                              <Clock className="w-3 h-3" /> {t.deadline}
+                            </span>
+                          </div>
+
+                          <h3 className="text-base font-black text-white group-hover:text-indigo-300 transition-colors leading-snug tracking-tight mb-2">
+                            {t.title}
+                          </h3>
+                        </div>
+
+                        <div className="pt-4 border-t border-slate-800/80 flex justify-between items-center text-xs text-slate-400 mt-3 font-bold">
+                          <div className="flex items-center gap-1.5">
+                            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white font-black shadow-sm ${
+                              urgent ? "bg-rose-600" : "bg-indigo-600"
+                            }`}>
+                              {t.assignee[0]}
+                            </div>
+                            {t.assignee}
+                          </div>
+
+                          <div className="flex gap-1.5">
+                            {t.status !== "TODO" && (
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); moveStatus(t.id, t.status === "DONE" ? "IN_PROGRESS" : "TODO"); }}
+                                className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition text-xs flex items-center gap-1 shadow"
+                                title="이전 단계로 이동"
+                              >
+                                <ArrowLeft className="w-3.5 h-3.5 font-bold" />
+                              </button>
+                            )}
+                            {t.status !== "DONE" && (
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); moveStatus(t.id, t.status === "TODO" ? "IN_PROGRESS" : "DONE"); }}
+                                className={`px-3 py-2 text-white font-extrabold rounded-xl transition text-xs flex items-center gap-1 shadow-md hover:scale-105 active:scale-95 ${
+                                  urgent ? "bg-rose-600 hover:bg-rose-500 shadow-rose-600/30" : "bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/30"
+                                }`}
+                                title="다음 단계로 이동"
+                              >
+                                이동 <ArrowRight className="w-3.5 h-3.5 font-bold" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <span className={`px-3.5 py-1 rounded-full text-xs font-black shadow-inner ${col.badge}`}>
-                  {colTasks.length}
-                </span>
+              </div>
+            );
+          })}
+        </main>
+      ) : (
+        /* --- [📊 신규 WBS & 갠트 차트 종합 일정 관제실 화면] --- */
+        <main className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
+          {/* 1. 상단 종합 타임라인 비교 바 */}
+          <div className="bg-slate-900/80 backdrop-blur-2xl p-8 rounded-3xl border border-slate-800 shadow-2xl relative overflow-hidden">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-6 border-b border-slate-800">
+              <div>
+                <h2 className="text-xl font-black text-white flex items-center gap-2">
+                  ⏱️ 종합 타임라인 정밀 분석 <span className="text-xs px-3 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 rounded-full">시간 경과 vs 실제 업무 진척</span>
+                </h2>
+                <p className="text-xs text-slate-400 mt-1 font-medium">프로젝트 총 기간(2026-06-01 ~ 07-31) 중 통과한 물리적 시간 대비 가중치 실적을 비교합니다.</p>
+              </div>
+              <div className="flex items-center gap-6 text-xs bg-slate-950 p-4 rounded-2xl border border-slate-800 font-bold">
+                <span>※ 시작일: <strong className="text-slate-200 block text-sm">2026-06-01</strong></span>
+                <span className="text-rose-400">📍 오늘: <strong className="block text-sm">2026-06-26 (26일차/61일)</strong></span>
+                <span>🎯 종료일: <strong className="text-slate-200 block text-sm">2026-07-31</strong></span>
+              </div>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <div className="flex justify-between text-xs font-bold mb-1.5 text-slate-400">
+                  <span>⏳ 물리적 시간 경과율</span>
+                  <span className="text-amber-400 font-black">42%</span>
+                </div>
+                <div className="w-full h-3 bg-slate-950 rounded-full overflow-hidden p-0.5 border border-slate-800">
+                  <div className="h-full bg-slate-600 rounded-full" style={{ width: "42%" }} />
+                </div>
               </div>
 
-              <div className="space-y-4 flex-1 relative z-10">
-                {isLoading ? (
-                  <div className="text-center py-10 text-slate-500 text-sm animate-pulse">로딩 중...</div>
-                ) : colTasks.length === 0 ? (
-                  <div className="h-44 flex items-center justify-center text-slate-600 text-sm border border-slate-800/60 border-dashed rounded-3xl bg-slate-950/20 font-bold">
-                    {searchQuery || filterRole !== "ALL" ? "검색 조건에 일치하는 카드가 없습니다." : "이곳에 카드를 드래그해 놓으세요."}
-                  </div>
-                ) : colTasks.map(t => {
-                  const urgent = isUrgent(t.deadline, t.status);
-                  const isBeingDragged = draggedTaskId === t.id;
+              <div>
+                <div className="flex justify-between text-xs font-bold mb-1.5 text-slate-300">
+                  <span>🔥 실제 업무 진척률 (진행중 50% 엄격 산출)</span>
+                  <span className="text-emerald-400 font-black">{progressPercent}%</span>
+                </div>
+                <div className="w-full h-4 bg-slate-950 rounded-full overflow-hidden p-0.5 border border-slate-800 shadow-inner">
+                  <div className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400 rounded-full shadow-lg shadow-emerald-500/30 transition-all duration-1000" style={{ width: `${progressPercent}%` }} />
+                </div>
+              </div>
+            </div>
 
-                  return (
-                    <div 
-                      key={t.id}
-                      draggable={true}
-                      onDragStart={(e) => handleDragStart(e, t.id)}
-                      onClick={() => openDetailModal(t)}
-                      className={`relative p-6 rounded-3xl border cursor-grab active:cursor-grabbing transition-all duration-300 ease-out flex flex-col justify-between group select-none ${
-                        isBeingDragged ? "opacity-30 scale-95 border-dashed border-indigo-400" :
-                        urgent
-                          ? "bg-gradient-to-br from-rose-950/40 via-slate-900/90 to-slate-900/90 border-rose-500/70 shadow-xl shadow-rose-500/10 animate-pulse hover:animate-none hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-rose-500/30 hover:border-rose-400"
-                          : "bg-slate-900/70 backdrop-blur-md border-slate-800/80 hover:bg-slate-900 hover:border-indigo-500/50 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-indigo-500/20"
-                      }`}
-                    >
-                      <div className={`absolute top-0 left-6 right-6 h-[2px] rounded-full opacity-60 group-hover:opacity-100 transition-opacity ${
-                        urgent ? "bg-rose-500 shadow-lg shadow-rose-500" : "bg-indigo-500"
-                      }`} />
+            <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center gap-3 text-xs text-emerald-300 font-bold">
+              <span className="text-lg">🚀</span>
+              <div>
+                <strong className="font-black text-emerald-400 uppercase tracking-wide block mb-0.5">순조로움 판별 결과</strong>
+                계획된 물리적 시간 경과율(42%)보다 우리 팀의 실제 업무 진척률({progressPercent}%)이 더 빠르게 앞서고 있습니다!
+              </div>
+            </div>
+          </div>
 
-                      <div>
-                        <div className="flex justify-between items-start gap-2 mb-3">
+          {/* 2. 경영진 요약 지표 카드 3개 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-slate-900/60 p-6 rounded-3xl border border-slate-800 shadow-xl flex items-center justify-between">
+              <div>
+                <span className="text-xs text-slate-400 font-bold block mb-1">📈 전체 진척도 요약</span>
+                <span className="text-3xl font-black text-white">{progressPercent}%</span>
+              </div>
+              <div className="w-12 h-12 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center font-black">📊</div>
+            </div>
+            <div className="bg-slate-900/60 p-6 rounded-3xl border border-slate-800 shadow-xl flex items-center justify-between">
+              <div>
+                <span className="text-xs text-slate-400 font-bold block mb-1">🔥 현재 활성 스프린트</span>
+                <span className="text-base font-black text-amber-300">스프린트 2: UI & 백엔드</span>
+              </div>
+              <div className="w-12 h-12 bg-amber-500/10 text-amber-400 rounded-2xl flex items-center justify-center font-black">⚡</div>
+            </div>
+            <div className="bg-slate-900/60 p-6 rounded-3xl border border-slate-800 shadow-xl flex items-center justify-between">
+              <div>
+                <span className="text-xs text-slate-400 font-bold block mb-1">✅ 완벽 종료 / 총 작업</span>
+                <span className="text-3xl font-black text-emerald-400">{doneCount} <span className="text-sm text-slate-500">/ {totalCount}개</span></span>
+              </div>
+              <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center font-black">✔️</div>
+            </div>
+          </div>
+
+          {/* 3. 정식 WBS & 갠트차트 매트릭스 표 */}
+          <div className="bg-slate-900/80 backdrop-blur-2xl rounded-3xl border border-slate-800 shadow-2xl overflow-hidden">
+            <div className="p-6 bg-slate-900 border-b border-slate-800 flex justify-between items-center">
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                📅 작업 분할 구조도(WBS) 및 주차별 갠트 차트(Gantt Matrix)
+              </h3>
+              <span className="text-xs text-slate-400 font-bold">총 {filteredTasks.length}개 산출물</span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[800px]">
+                <thead>
+                  <tr className="bg-slate-950/80 text-[11px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                    <th className="p-4 w-1/3">업무명 / 태그</th>
+                    <th className="p-4 w-24">담당자</th>
+                    <th className="p-4 w-24">현재 상태</th>
+                    <th className="p-4 w-20">마감일</th>
+                    <th className="p-4 text-center bg-slate-900/40">6월 1~2주</th>
+                    <th className="p-4 text-center bg-slate-900/40">6월 3~4주</th>
+                    <th className="p-4 text-center bg-slate-900/40">7월 1~2주</th>
+                    <th className="p-4 text-center bg-slate-900/40">7월 3~4주</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 text-xs font-medium">
+                  {filteredTasks.map((t, idx) => {
+                    const isDone = t.status === "DONE";
+                    const isInProg = t.status === "IN_PROGRESS";
+                    const startGrid = idx % 3 === 0 ? 1 : idx % 3 === 1 ? 2 : 3;
+
+                    return (
+                      <tr key={t.id} className="hover:bg-slate-800/40 transition">
+                        <td className="p-4 font-bold text-white">
+                          <div className="line-clamp-1 mb-1">{t.title}</div>
                           <div className="flex flex-wrap gap-1">
-                            {t.roleTag.split(",").map(tag => (
-                              <span key={tag} className="px-2.5 py-1 bg-slate-950/80 text-slate-300 rounded-xl text-xs font-extrabold border border-slate-800 shadow-sm">
-                                {tag}
-                              </span>
+                            {t.roleTag.split(",").map(tg => (
+                              <span key={tg} className="text-[10px] px-2 py-0.5 bg-slate-950 text-indigo-300 rounded border border-slate-800">{tg}</span>
                             ))}
                           </div>
-                          
-                          <span className={`px-2.5 py-1 rounded-xl text-xs font-black flex items-center gap-1 shadow-sm ${
-                            t.status === "DONE" || t.deadline.includes("완료") 
-                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" 
-                              : urgent
-                              ? "bg-rose-500 text-white font-extrabold shadow-md shadow-rose-500/50 animate-bounce"
-                              : "bg-indigo-950 text-indigo-300 border border-indigo-800/50"
+                        </td>
+                        <td className="p-4 text-slate-300 font-bold">@{t.assignee}</td>
+                        <td className="p-4">
+                          <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${
+                            isDone ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" :
+                            isInProg ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/30" :
+                            "bg-slate-800 text-slate-400"
                           }`}>
-                            {urgent && <Flame className="w-3.5 h-3.5 fill-white" />}
-                            ⏳ {t.deadline}
+                            {t.status}
                           </span>
-                        </div>
-                        
-                        <h3 className="font-extrabold text-base text-slate-100 group-hover:text-indigo-300 transition-colors mb-2 leading-snug flex items-center justify-between">
-                          <span>{t.title}</span>
-                          <Move className="w-3.5 h-3.5 text-slate-600 group-hover:text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </h3>
-                        {t.desc && (
-                          <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed mb-5 font-medium">
-                            {t.desc}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="pt-4 border-t border-slate-800/80 flex justify-between items-center mt-2">
-                        <div className="flex items-center gap-2 text-xs text-slate-300 font-bold">
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shadow-md ${
-                            urgent ? "bg-rose-500 text-white" : "bg-indigo-600 text-white"
-                          }`}>
-                            {t.assignee[0]}
-                          </div>
-                          {t.assignee}
-                        </div>
-
-                        <div className="flex gap-1.5">
-                          {t.status !== "TODO" && (
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); moveStatus(t.id, t.status === "DONE" ? "IN_PROGRESS" : "TODO"); }}
-                              className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition text-xs flex items-center gap-1 shadow"
-                              title="이전 단계로 이동"
-                            >
-                              <ArrowLeft className="w-3.5 h-3.5 font-bold" />
-                            </button>
                           )}
                           {t.status !== "DONE" && (
                             <button 
