@@ -248,10 +248,11 @@ export default function KanbanBoard() {
     return matchRole && matchSearch;
   });
 
-  // 진척도 통계 연산
+  // 진척도 통계 연산 (진행 중 카드 50% 가중치 반영 규칙)
   const totalCount = tasks.length;
   const doneCount = tasks.filter(t => t.status === "DONE").length;
-  const progressPercent = totalCount === 0 ? 0 : Math.round((doneCount / totalCount) * 100);
+  const inProgressCount = tasks.filter(t => t.status === "IN_PROGRESS").length;
+  const progressPercent = totalCount === 0 ? 0 : Math.round(((doneCount + inProgressCount * 0.5) / totalCount) * 100);
 
   // [피드백 #4] 조원별 기여도 집계 연산 (보고서 출력용)
   const allAssignees = Array.from(new Set(tasks.map(t => t.assignee)));
@@ -259,7 +260,8 @@ export default function KanbanBoard() {
     const mTasks = tasks.filter(t => t.assignee === name);
     const mTotal = mTasks.length;
     const mDone = mTasks.filter(t => t.status === "DONE").length;
-    const mRate = mTotal === 0 ? 0 : Math.round((mDone / mTotal) * 100);
+    const mInProgress = mTasks.filter(t => t.status === "IN_PROGRESS").length;
+    const mRate = mTotal === 0 ? 0 : Math.round(((mDone + mInProgress * 0.5) / mTotal) * 100);
     const role = mTasks[0]?.roleTag || "팀원";
     return { name, role, total: mTotal, done: mDone, rate: mRate };
   });
