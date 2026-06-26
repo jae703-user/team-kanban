@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+model Task {
+  id        String   @id @default(cuid())
+  title     String
+  desc      String?
+  assignee  String
+  roleTag   String   @default("👑팀장")
+  status    String   @default("TODO") // TODO, IN_PROGRESS, DONE
+  deadline  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 사용자(회원 및 관리자) 계정 정보를 담는 테이블
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique // 이메일은 중복 가입 방지를 위해 고유값 처리
+  password  String   // 암호화(해시)되어 저장될 비밀번호
+  name      String   // 사용자 이름(닉네임)
+  isAdmin   Boolean  @default(false) // 관리자 권한 여부 (기본값은 일반 회원)
+  createdAt DateTime @default(now())
+}
